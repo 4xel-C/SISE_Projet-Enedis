@@ -1,0 +1,114 @@
+from typing import Any
+
+import requests
+
+from .helper import retry_on_error
+
+
+class Ademe_API_requester:
+    """
+    A class to interact with the ADEME API.
+    """
+
+    # Class attributes: base URLs for different datasets
+    __base_url_existant = (
+        "https://data.ademe.fr/data-fair/api/v1/datasets/dpe03existant/lines"
+    )
+    __base_url_neuf = "https://data.ademe.fr/data-fair/api/v1/datasets/dpe02neuf/lines"
+
+    def __init__(
+        self,
+        size: int = 2500,
+    ) -> None:
+        """Initializes the Ademe_API_requester class.
+
+        Args:
+            size (int, optional): The number of results to return per page. Defaults to 2500.
+            max_retries (int, optional): The maximum number of retry attempts for API requests. Defaults to 3.
+            backoff_factor (int, optional): The backoff factor for retry delays. Defaults to 2.
+        """
+        self.__params = {"size": size}
+
+    @retry_on_error(max_retries=3, backoff_factor=2)
+    def __get_data(self, url: str, params: dict[str, Any] | None = None) -> dict | None:
+        """Private method to get the crude data from the API passing the base URL and parameters.
+
+        Returns:
+            dict: The JSON response from the API or an error message.
+        """
+        response = requests.get(url, params=params)
+        response.raise_for_status()  # Raise an error for bad responses.
+        return response.json()
+
+    @retry_on_error(max_retries=3, backoff_factor=2)
+    def __get_length(self, url: str, params: dict[str, Any] | None = None) -> int:
+        """Private method to get the total number of results from the API for monitoring progress.
+
+        Args:
+            url (str): The base URL for the API request.
+            params (dict[str, Any] | None, optional): The parameters for the API request. Defaults to None.
+        """
+
+        # Change the size of the parameter to 1 to speed up the request for total length.
+        params = params | {"size": 1} if params else {"size": 1}
+
+        response = requests.get(url, params=params)
+        response.raise_for_status()  # Raise an error for bad responses.
+        length = response.json().get("total", 0)
+        return length
+
+    def get_existant_bydepartement(self, departement: int) -> list[dict[str, Any]]:
+        """Retrieve existing building data by department.
+
+        Args:
+            departement (int): The department code to filter by.
+
+        Returns:
+            list[dict[str, Any]]: A list of dictionaries containing the building data.
+        """
+        # loggigng
+        print(f"-- Fetching existing building data for department: {departement} --")
+
+        # Build the parameter dictionary from the new department argument.
+        params = self.__params | {"qs": f"code_departement_ban:{departement}"}
+
+        # Initialize the all_data list to get all the data from the pagination loop.
+        all_data: list[dict[str, Any]] = []
+
+        # Initialize the URL to the base URL for existing buildings.
+        url = self.__base_url_existant
+
+        total_length = self.__get_length(url, params=params)
+
+        if total_length == 0:
+            print("No data found for the specified department.")
+            return all_data
+
+        print(f"Total records to fetch: {total_length}")
+
+        # Pagination loop.
+        while url:
+            data = self.__get_data(url, params=params)
+            all_data.extend(data["results"])
+            print(
+                f"Fetched {len(data['results'])} records. Total so far: {len(all_data)}/{total_length} ({round(len(all_data) / total_length * 100, 2)}%)"
+            )
+            url = data.get("next")  # Get the next page URL.
+            params = None  # Clear params for subsequent requests.
+        # endwhile
+
+        return all_data
+
+
+if __name__ == "__main__":
+    # Add parent directory to the sys.path to allow imports from src
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).parent / "src"))
+    print(sys.path)
+
+    # Example usage
+    requester = Ademe_API_requester(size=1000)
+    data = requester.get_existant_bydepartement(75)  # Fetch data for department
+    print(f"Total records retrieved: {len(data)}")
