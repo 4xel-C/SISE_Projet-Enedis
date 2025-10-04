@@ -98,17 +98,3 @@ class Ademe_API_requester:
         # endwhile
 
         return all_data
-
-
-if __name__ == "__main__":
-    # Add parent directory to the sys.path to allow imports from src
-    import sys
-    from pathlib import Path
-
-    sys.path.insert(0, str(Path(__file__).parent / "src"))
-    print(sys.path)
-
-    # Example usage
-    requester = Ademe_API_requester(size=1000)
-    data = requester.get_existant_bydepartement(75)  # Fetch data for department
-    print(f"Total records retrieved: {len(data)}")
