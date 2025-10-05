@@ -1,8 +1,9 @@
 # SISE-Projet-Enedis
 Master’s Year 2 Python – ML Project on Classifying Housing Energy Performance Certificate (DPE) Ratings in France.
 
-To be implemented:
+To do:
 - [ ] Data extraction from APIs.
+- [ ] Data preparation.
 - [ ] Machine learning models training.
 - [ ] Vizualisation.
 - [ ] Frontend.
@@ -25,14 +26,16 @@ mon_projet/
 │   └── 3_Analyse_API.py
 │
 ├── src/                       # Main code.
-│   ├── api
+│   ├── data_requesters        # Requesters for data on external APIs.
 │   │   ├── api_requesters.py
-│   │   ├── api_routes.py
 │   │   └── helper.py
-│   ├── models.py/        
+│   └── api.py/                # FastAPI routes for the application.
+│       └── main.py            # main FastAPI file to run the back-end API routes.
 │
-├── models/                    # trained ml models.
+├── MLmodels/                    # trained ml models.
 │   ├── model1.pkl
 │   └── ...
 ├── assets/                    # assets for streamlit app.
+├── data/                      # data storage (will contains a sample for test).
+└── notebooks/                 # ipython noteboks for exploration.                     
 ```

@@ -11,7 +11,7 @@ def retry_on_error(max_retries=3, backoff_factor=2):
     """
 
     def decorator(func):
-        @wraps(func)  # Import metadata from the original function
+        @wraps(func)  # Import metadata from the original function.
         def wrapper(*args, **kwargs):
             for attempt in range(max_retries):
                 try:
